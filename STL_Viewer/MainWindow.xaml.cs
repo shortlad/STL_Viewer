@@ -13,8 +13,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Configuration;
+using STL_Viewer.BO;
+using System.IO;
+using STL_Viewer.BL;
+using Newtonsoft.Json;
 
 namespace STL_Viewer
 {
@@ -22,36 +25,78 @@ namespace STL_Viewer
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
-    {
-        private static readonly string defaultFolderPath = ConfigurationManager.AppSettings["defaultFolderPath"].ToString();
+    {   
+        private static readonly string modelDBPath = ConfigurationManager.AppSettings["ModelDB"].ToString();
+        private ModelDB _modelDB;
         public MainWindow()
         {
             InitializeComponent();
-            folderLbl.Content = defaultFolderPath;
-        }
+            //ParseBl.ParseTest();
+            ModelDB modelDB = new ModelDB();
+            if (File.Exists(modelDBPath))
+            {
+                using (var reader = new StreamReader(File.OpenRead(modelDBPath)))
+                {
+                    modelDB =JsonConvert.DeserializeObject<ModelDB>(reader.ReadToEnd().ToString());                    
+                }
+                
+            }
+            else
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog();
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.FileName = "Select A Folder";
+                if (dialog.ShowDialog() == true)
+                {
+                    modelDB.Name = "Model 1";
+                    modelDB.RootFilePath = Path.GetDirectoryName(dialog.FileName);
+                    modelDB.Models = new List<STL_Model>();
+                    modelDB.SaveToPath = modelDBPath;
+                    using (var writer = new StreamWriter(File.Open(modelDBPath, FileMode.OpenOrCreate)))
+                    {
+                        writer.Write(JsonConvert.SerializeObject(modelDB));
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            foreach (var model in modelDB.Models)
+            {
+                fileList.Items.Add(new FileListItem() { Name = model.Name, Model = model });
+            }
+            _modelDB = modelDB;
+        }        
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            
-            var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.InitialDirectory = defaultFolderPath;
-            dialog.Filter = "STL file(*.stl)|*.stl|All files(*.*)|*.*";
-            dialog.FilterIndex = 0;
+            _modelDB = ParseBl.ScanForNewFiles(_modelDB);
+            UpdateFileList(_modelDB.Models);
+        }
 
-            Nullable<bool> result = dialog.ShowDialog();
+        private void UpdateFileList(List<STL_Model> models)
+        {
+            fileList.Items.Clear();
 
-            if (result == true)
+            foreach (var model in models)
             {
-                folderLbl.Content = dialog.FileName;
-                Create3dViewPort(dialog.FileName);
+                fileList.Items.Add(new FileListItem() { Name = model.Name, Model = model });
             }
         }
 
         private void Create3dViewPort(string filePath)
         {
-            var device3D = new ModelVisual3D();
-            device3D.Content = Display3d(filePath);
+            var device3D = new ModelVisual3D
+            {
+                Content = Display3d(filePath)
+            };
+            viewPort.Children.Clear();
+            viewPort.Children.Add(new DefaultLights());
             viewPort.Children.Add(device3D);
+            viewPort.ZoomExtents();
         }
 
         private Model3D Display3d(string model)
@@ -70,5 +115,33 @@ namespace STL_Viewer
             return device;
         }
 
+        private void FileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ListBox listBox = (ListBox) sender;
+            var selectedItem = (FileListItem)listBox.SelectedItem;
+            if(selectedItem?.Model == null)
+            {
+                return;
+            }
+            if (selectedItem.Model.Tags?.Count > 0)
+            {
+                var tags = string.Join(", ", selectedItem.Model.Tags);
+                tagsTextBox.Text = tags;
+            }
+            else
+            {
+                tagsTextBox.Text = "";
+            }
+            Create3dViewPort(selectedItem.Model.FilePath);
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = (FileListItem)fileList.SelectedItem;
+            var tags = tagsTextBox.Text.Split(',').Select(x => x.Trim()).ToList();
+            var model = _modelDB.Models.First(x => x.Guid == selectedItem.Model.Guid);
+            model.Tags = tags;            
+            ParseBl.WriteToFile(_modelDB.SaveToPath, _modelDB);
+        }
     }
 }

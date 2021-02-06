@@ -1,0 +1,3 @@
+FileName,FilePath,Name,TagsDelimitedString
+Test1.stl,E:\Git\STL_Viewer\STL_Viewer,Test1,Cool|Sweet|Rad
+Test2.stl,E:\Git\STL_Viewer\STL_Viewer,Test2,Cool|Nice|Two hands|Big Head

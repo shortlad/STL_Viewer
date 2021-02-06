@@ -6,12 +6,22 @@
         xmlns:local="clr-namespace:STL_Viewer"
         xmlns:h="http://helix-toolkit.org/wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Button Content="Browse" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.168,0.477" Click="Button_Click"/>
+        Title="MainWindow" Height="731.156" Width="1119.678">
+    <Grid Margin="0,0,0.333,27.333">
+        <Button Content="Search for new files&#xD;&#xA;" HorizontalAlignment="Left" Margin="22,10,0,0" VerticalAlignment="Top" Width="127" RenderTransformOrigin="0.168,0.477" Click="Button_Click" Height="26"/>
         <Label x:Name="folderLbl" Content="" HorizontalAlignment="Left" Margin="97,10,0,0" VerticalAlignment="Top"/>
-        <h:HelixViewport3D x:Name="viewPort" Margin="10,49,-9.667,-0.333">
-            <h:DefaultLights/>            
+        <h:HelixViewport3D x:Name="viewPort" Margin="442,49,-9.667,-0.667" ZoomExtentsWhenLoaded="True">
+            <h:DefaultLights/>
         </h:HelixViewport3D>
+        <ListBox x:Name="fileList" HorizontalAlignment="Left" Height="320" Margin="10,92,0,0" VerticalAlignment="Top" Width="170" SelectionChanged="FileList_SelectionChanged">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Path=Name}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBox x:Name="tagsTextBox" HorizontalAlignment="Left" Height="77" Margin="196,106,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="172"/>
+        <Label Content="Tags" HorizontalAlignment="Left" Margin="227,77,0,0" VerticalAlignment="Top"/>
+        <Button Content="Save Tags" HorizontalAlignment="Left" Margin="293,197,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1"/>
     </Grid>
 </Window>
